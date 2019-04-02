@@ -3,6 +3,7 @@
 import sys
 import re
 import dns.resolver
+import dns.exception
 import subprocess
 
 NOARG_FLAG_REGEX = '-[346BCpqrv]+'
@@ -54,13 +55,16 @@ def main(args):
             resolver = dns.resolver.Resolver()
             domain = domain_name(remote[1])
             srv_address = '_ssh._tcp.' + domain
-            answers = resolver.query(srv_address, 'SRV')
-            target = str(answers[0].target)[:-1]
-            port = answers[0].port
-            new_arg = re.sub(domain, target, remote[1])
-            print('Found srv record {}:{} for search {}'.format(target, port, srv_address))
-            new_args[remote[0]] = new_arg
-            new_args = ['-P', str(port)] + new_args
+            try:
+                answers = resolver.query(srv_address, 'SRV')
+                target = str(answers[0].target)[:-1]
+                port = answers[0].port
+                print('Found srv record {}:{} for search {}'.format(target, port, srv_address))
+                new_arg = re.sub(domain, target, remote[1])
+                new_args[remote[0]] = new_arg
+                new_args = ['-P', str(port)] + new_args
+            except dns.exception.DNSException:
+                print('No SRV records found for search {}'.format(srv_address))
 
     launch_scp(new_args)
 
