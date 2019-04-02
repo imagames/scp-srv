@@ -44,27 +44,28 @@ def main(args):
     new_args = args
 
     if any([arg == '-P' for arg in args]):
-        print('skipped!')
+        print('Port already in arguments, skipping SRV lookup')
     else:
         # find remotes:
         # SRC is the first argument that doesn't follow a flag
         # DST is the last argument that doesn't follow a flag
         no_flag = [(ind, x) for ind, x in enumerate(args) if is_not_flag(args, ind)]
-        remote = no_flag[0] if is_remote(no_flag[0][1]) else no_flag[-1] if is_remote(no_flag[-1][1]) else None
-        if remote is not None:
-            resolver = dns.resolver.Resolver()
-            domain = domain_name(remote[1])
-            srv_address = '_ssh._tcp.' + domain
-            try:
-                answers = resolver.query(srv_address, 'SRV')
-                target = str(answers[0].target)[:-1]
-                port = answers[0].port
-                print('Found srv record {}:{} for search {}'.format(target, port, srv_address))
-                new_arg = re.sub(domain, target, remote[1])
-                new_args[remote[0]] = new_arg
-                new_args = ['-P', str(port)] + new_args
-            except dns.exception.DNSException:
-                print('No SRV records found for search {}'.format(srv_address))
+        if len(no_flag) >= 2:
+            remote = no_flag[0] if is_remote(no_flag[0][1]) else no_flag[-1] if is_remote(no_flag[-1][1]) else None
+            if remote is not None:
+                resolver = dns.resolver.Resolver()
+                domain = domain_name(remote[1])
+                srv_address = '_ssh._tcp.' + domain
+                try:
+                    answers = resolver.query(srv_address, 'SRV')
+                    target = str(answers[0].target)[:-1]
+                    port = answers[0].port
+                    print('Found srv record {}:{} for search {}'.format(target, port, srv_address))
+                    new_arg = re.sub(domain, target, remote[1])
+                    new_args[remote[0]] = new_arg
+                    new_args = ['-P', str(port)] + new_args
+                except dns.exception.DNSException:
+                    print('No SRV records found for search {}'.format(srv_address))
 
     launch_scp(new_args)
 
