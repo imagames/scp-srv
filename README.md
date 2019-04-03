@@ -1,6 +1,6 @@
 # scp-srv
 
-This script resolves wraps SCP and uses SRV records to resolve hosts and ports.
+This script wraps SCP and uses SRV records to resolve hosts and ports.
 
 To use: 
 
